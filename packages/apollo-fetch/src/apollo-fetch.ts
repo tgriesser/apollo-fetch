@@ -42,7 +42,7 @@ export function constructDefaultOptions(
 ): RequestInit {
   let body;
   try {
-    body = JSON.stringify(requestOrRequests);
+    body = JSON.stringify(requestBodyWithoutContext(requestOrRequests));
   } catch (e) {
     throw new Error(
       `Network request failed. Payload is not serializable: ${e.message}`,
@@ -59,6 +59,16 @@ export function constructDefaultOptions(
       ...options.headers || [],
     },
   };
+}
+
+function requestBodyWithoutContext(
+  requestOrRequests: GraphQLRequest | GraphQLRequest[],
+) {
+  if (Array.isArray(requestOrRequests)) {
+    return requestOrRequests.map(req => requestBodyWithoutContext(req));
+  }
+  const { context, ...request } = requestOrRequests;
+  return { ...request };
 }
 
 function throwHttpError(response, error) {
