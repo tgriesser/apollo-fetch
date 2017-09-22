@@ -11,6 +11,7 @@ export interface GraphQLRequest {
   query?: string;
   variables?: object;
   operationName?: string;
+  context?: object;
 }
 
 export interface FetchResult {

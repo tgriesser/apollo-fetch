@@ -663,9 +663,11 @@ describe('apollo-fetch', () => {
 
       const operations = [simpleQueryWithNoVars, simpleQueryWithNoVars];
 
-      apolloFetch(operations).then(assert).catch(error => {
-        done();
-      });
+      apolloFetch(operations)
+        .then(assert)
+        .catch(error => {
+          done();
+        });
     });
   });
 
@@ -768,19 +770,30 @@ describe('apollo-fetch', () => {
   });
 
   describe('constructOptions', () => {
-    const operation = simpleQueryWithNoVars;
-    const operations = [simpleQueryWithNoVars, simpleQueryWithNoVars];
+    const context = {
+      recursiveProp: {},
+    };
+    const operation = {
+      query: print(simpleQueryWithNoVars),
+    };
+    const operations = [operation, operation];
+    const operationWithContext = {
+      query: print(simpleQueryWithNoVars),
+      context,
+    };
+    const operationsWithContext = [operationWithContext, operationWithContext];
     const opts = {
       headers: {
         stub: 'header',
       },
     };
+    context.recursiveProp = context;
 
     it('should pass single GraphQLRequest to constructOptions and call fetch with result', done => {
       const apolloFetch = createApolloFetch({
-        uri: 'batch',
+        uri: 'single',
         customFetch: (uri, options) => {
-          assert.deepEqual(uri, 'batch');
+          assert.deepEqual(uri, 'single');
           assert.deepEqual(options, opts);
           return done();
         },
@@ -792,6 +805,19 @@ describe('apollo-fetch', () => {
       });
 
       apolloFetch(operation).catch(e => void 0);
+    });
+
+    it('should strip context from request payload by default', done => {
+      const apolloFetch = createApolloFetch({
+        uri: 'single',
+        customFetch: (uri, options) => {
+          assert.deepEqual(uri, 'single');
+          assert.equal(options.body, JSON.stringify(operation));
+          return done();
+        },
+      });
+
+      apolloFetch(operationWithContext).catch(e => void 0);
     });
 
     it('should pass array of GraphQLRequest to constructOptions and call fetch with result', done => {
@@ -812,6 +838,19 @@ describe('apollo-fetch', () => {
       });
 
       apolloFetch(operations).catch(e => void 0);
+    });
+
+    it('should strip context from array of payloads by default', done => {
+      const apolloFetch = createApolloFetch({
+        uri: 'batch',
+        customFetch: (uri, options) => {
+          assert.deepEqual(uri, 'batch');
+          assert.equal(options.body, JSON.stringify(operations));
+          return done();
+        },
+      });
+
+      apolloFetch(operationsWithContext).catch(e => void 0);
     });
   });
 });
